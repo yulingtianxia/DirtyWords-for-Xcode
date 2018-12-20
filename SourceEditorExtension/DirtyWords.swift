@@ -8,12 +8,13 @@
 
 import Cocoa
 
-class DirtyWords: NSObject {
+class DirtyWords {
     static let shared = DirtyWords()
     private var words = [String]()
     private let lock = NSLock()
+    private let fileName = "dirtywords"
     
-    private override init() {
+    private init() {
         
     }
     
@@ -24,18 +25,85 @@ class DirtyWords: NSObject {
         return result
     }
     
-    func loadList() {
-        if let path = Bundle.main.path(forResource: "dirtywords", ofType: nil) {
+    func load() {
+        do {
+            var dirtyWordsFileURL: URL? = nil
+            
+            if let fileURL = remoteDirtyWordsFileStoreURL() {
+                if FileManager.default.fileExists(atPath: fileURL.path) {
+                    dirtyWordsFileURL = fileURL
+                }
+            }
+            if dirtyWordsFileURL == nil, let fileURL = localDirtyWordsFileURL() {
+                if FileManager.default.fileExists(atPath: fileURL.path) {
+                    dirtyWordsFileURL = fileURL
+                }
+            }
+            guard let url = dirtyWordsFileURL else {
+                print("dirtyWordsFileURL is nil")
+                return
+            }
+            try loadDirtyWords(fromFileURL: url)
+            
+        } catch {
+            print(error.localizedDescription)
+        }
+        
+        downloadDirtyWordsFile()
+    }
+    
+    func loadDirtyWords(fromFileURL url: URL) throws {
+        let data = try String(contentsOf: url, encoding: .utf8)
+        lock.lock()
+        words = data.components(separatedBy: .newlines).map({ $0.trimmingCharacters(in: .whitespaces) }).filter({ $0.count > 0 })
+        lock.unlock()
+    }
+    
+    func downloadDirtyWordsFile() {
+        guard let url = URL(string: "https://raw.githubusercontent.com/yulingtianxia/DirtyWords-for-Xcode/master/SourceEditorExtension/dirtywords") else {
+            print("load dirty word url error.")
+            return
+        }
+        let task = URLSession.shared.downloadTask(with: url) { (localURL, response, error) in
+            if let error = error {
+                print("download dirty words file error. \(error.localizedDescription)")
+                return
+            }
+            guard let sourceURL = localURL else {
+                print("download dirty words file localURL is nil.")
+                return
+            }
+            guard let targetURL = self.remoteDirtyWordsFileStoreURL() else {
+                print("remote dirty words file store URL is nil.")
+                return
+            }
             do {
-                let data = try String(contentsOfFile: path, encoding: .utf8)
-                lock.lock()
-                words = data.components(separatedBy: .newlines).map({ $0.trimmingCharacters(in: .whitespaces) }).filter({ $0.count > 0 })
-                lock.unlock()
+                if FileManager.default.fileExists(atPath: targetURL.path) {
+                    try FileManager.default.removeItem(at: targetURL)
+                }
+                try FileManager.default.moveItem(at: sourceURL, to: targetURL)
+                try self.loadDirtyWords(fromFileURL: targetURL)
             } catch {
-                print(error)
+                print(error.localizedDescription)
+                return
             }
         }
-        //        TODO: load from network
+        task.resume()
+    }
+    
+    func remoteDirtyWordsFileStoreURL() -> URL? {
+        if let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).last {
+            let fileURL = documentsDirectory.appendingPathComponent(fileName)
+            return fileURL
+        }
+        return nil
+    }
+    
+    func localDirtyWordsFileURL() -> URL? {
+        if let fileURL = Bundle.main.url(forResource: fileName, withExtension: nil) {
+            return fileURL
+        }
+        return nil
     }
     
 }

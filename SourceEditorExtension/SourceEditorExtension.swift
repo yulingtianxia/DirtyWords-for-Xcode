@@ -12,7 +12,7 @@ import XcodeKit
 class SourceEditorExtension: NSObject, XCSourceEditorExtension {
     
     func extensionDidFinishLaunching() {
-        DirtyWords.shared.loadList()
+        DirtyWords.shared.load()
     }
     
     /*
