@@ -19,6 +19,7 @@ class SourceEditorCommand: NSObject, XCSourceEditorCommand {
                 continue
             }
             for word in dirtyWords {
+                code = code.replacingOccurrences(of: "<#T##\(word)#>", with: word, options: [.literal, .caseInsensitive], range: nil)
                 code = code.replacingOccurrences(of: word, with: "<#T##\(word)#>", options: [.literal, .caseInsensitive], range: nil)
             }
             invocation.buffer.lines[index] = code
