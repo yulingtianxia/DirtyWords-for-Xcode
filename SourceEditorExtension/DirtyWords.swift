@@ -29,11 +29,11 @@ class DirtyWords {
         do {
             var dirtyWordsFileURL: URL? = nil
             
-            if let fileURL = remoteDirtyWordsFileStoreURL() {
-                if FileManager.default.fileExists(atPath: fileURL.path) {
-                    dirtyWordsFileURL = fileURL
-                }
-            }
+//            if let fileURL = remoteDirtyWordsFileStoreURL() {
+//                if FileManager.default.fileExists(atPath: fileURL.path) {
+//                    dirtyWordsFileURL = fileURL
+//                }
+//            }
             if dirtyWordsFileURL == nil, let fileURL = localDirtyWordsFileURL() {
                 if FileManager.default.fileExists(atPath: fileURL.path) {
                     dirtyWordsFileURL = fileURL
@@ -49,24 +49,24 @@ class DirtyWords {
             print(error.localizedDescription)
         }
         
-        downloadDirtyWordsFile()
+//        downloadDirtyWordsFile()
     }
     
     func loadDirtyWords(fromFileURL url: URL) throws {
         let data = try String(contentsOf: url, encoding: .utf8)
         lock.lock()
         words = data.components(separatedBy: .newlines).map({ $0.trimmingCharacters(in: .whitespaces) }).filter({ $0.count > 0 })
-//        for word in words {
-//            var valid = true
-//            for w in words {
-//                if w != word && word.contains(w) {
-//                    valid = false
-//                }
-//            }
-//            if valid {
-//                print(word)
-//            }
-//        }
+        for word in words {
+            var valid = true
+            for w in words {
+                if w != word && word.contains(w) {
+                    valid = false
+                }
+            }
+            if valid {
+                print(word)
+            }
+        }
         lock.unlock()
     }
     
