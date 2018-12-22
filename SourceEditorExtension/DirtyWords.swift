@@ -56,6 +56,17 @@ class DirtyWords {
         let data = try String(contentsOf: url, encoding: .utf8)
         lock.lock()
         words = data.components(separatedBy: .newlines).map({ $0.trimmingCharacters(in: .whitespaces) }).filter({ $0.count > 0 })
+//        for word in words {
+//            var valid = true
+//            for w in words {
+//                if w != word && word.contains(w) {
+//                    valid = false
+//                }
+//            }
+//            if valid {
+//                print(word)
+//            }
+//        }
         lock.unlock()
     }
     
